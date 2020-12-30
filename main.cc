@@ -20,7 +20,7 @@ constexpr int32_t SCREEN_HEIGHT = 1100;
 constexpr float fov = glm::radians(90.0f);
 
 constexpr auto vertexShaderSource = R"(
-#version 330 core
+#version 430 core
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
@@ -39,7 +39,7 @@ void main()
 )";
 
 constexpr auto fragmentShaderSource = R"(
-#version 330 core
+#version 430 core
 out vec4 FragColor;
 
 in vec2 TexCoords;
@@ -74,10 +74,20 @@ unsigned int loadShaders(const char *shaderSource, GLenum shaderType) {
 
 unsigned int makeShaderProgram(uint32_t vertexShader, uint32_t fragmentShader) {
   unsigned int shaderProgram;
+  int success{ 0 };
+  char infoLog[4096];
+
   shaderProgram = glCreateProgram();
   glAttachShader(shaderProgram, vertexShader);
   glAttachShader(shaderProgram, fragmentShader);
   glLinkProgram(shaderProgram);
+
+  glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+  if (!success)
+  {
+      glGetProgramInfoLog(shaderProgram, 4096, NULL, infoLog);
+      std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+  }
 
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
@@ -257,8 +267,13 @@ int main() {
       fov, (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, zFar);
 
   pad.textureId = loadImage("../pad.png");
-  glActiveTexture(GL_TEXTURE1);
-  glUniform1i(glGetUniformLocation(pad.textureId, "texture_diffuse1"), 1);
+
+  glUseProgram(pad.shaderId);
+  glActiveTexture(GL_TEXTURE0);
+  glUniform1i(glGetUniformLocation(pad.shaderId
+      , "texture_diffuse1"), 0); //zero is inxed zero but we only have one number
+
+  glUseProgram(0);
 
   //  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   while (!glfwWindowShouldClose(window)) {
@@ -282,8 +297,8 @@ int main() {
     camera(pad.shaderId);
 
     // and finally bind the texture
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, 1);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, pad.textureId);
     glBindVertexArray(VAO);
 
     glm::mat4 model = glm::mat4(1.0f);
@@ -298,6 +313,7 @@ int main() {
 
     glDrawElements(GL_TRIANGLES, pad.mesh.indicies.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+    glUseProgram(0);
 
     glfwSwapBuffers(window);
     // Keep running
