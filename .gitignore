@@ -49,3 +49,4 @@ release/
 .cmake/
 *.ninja*
 KHR/khrplatform.h
+vc140.pdb
