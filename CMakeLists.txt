@@ -46,6 +46,7 @@ endif()
 set (SRCS
     main.cc
     glad.c
+    gameobject.cc
     wavefrontreader.cc)
 
 add_executable(${CMAKE_PROJECT_NAME} ${SRCS})
