@@ -199,8 +199,9 @@ void render(GameObject &obj) {
   glUseProgram(0);
 }
 
-void CreateGameObject(GameObject &obj) {
-  WaveFrontReader reader("../pad.obj");
+void CreateGameObject(GameObject &obj, std::string assetName,
+                      std::string assetMaterialName) {
+  WaveFrontReader reader(assetName);
   // WaveFrontReader reader("../plane.obj");
   // WaveFrontReader reader("../kub.obj");
 
@@ -241,12 +242,14 @@ void CreateGameObject(GameObject &obj) {
   auto fragmentShader = loadShaders(fragmentShaderSource, GL_FRAGMENT_SHADER);
 
   obj.shaderId = makeShaderProgram(vertexShader, fragmentShader);
-  obj.textureId = loadImage("../pad.png");
 
-  glUseProgram(obj.shaderId);
-  glActiveTexture(GL_TEXTURE0);
-  glUniform1i(glGetUniformLocation(obj.shaderId, "texture_diffuse1"), 0);
+  if (assetMaterialName != "") {
+    obj.textureId = loadImage(assetMaterialName);
 
+    glUseProgram(obj.shaderId);
+    glActiveTexture(GL_TEXTURE0);
+    glUniform1i(glGetUniformLocation(obj.shaderId, "texture_diffuse1"), 0);
+  }
   glUseProgram(0);
 }
 
@@ -311,7 +314,7 @@ int main() {
   GameObject pad;
   pad.movement = glm::vec3(800.0f, 10.0f, 200.0f);
 
-  CreateGameObject(pad); // zero is inxed zero but we only have one number
+  CreateGameObject(pad, "../pad.obj", "../pad.png");
 
   //  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   while (!glfwWindowShouldClose(window)) {
