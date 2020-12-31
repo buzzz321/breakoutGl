@@ -11,6 +11,7 @@ public:
   Mesh mesh;
   uint32_t textureId{0};
   uint32_t shaderId{0};
+  uint32_t VAO{0};
 };
 
 #endif // GAMEOBJECT_H

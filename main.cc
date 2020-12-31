@@ -74,7 +74,7 @@ unsigned int loadShaders(const char *shaderSource, GLenum shaderType) {
 
 unsigned int makeShaderProgram(uint32_t vertexShader, uint32_t fragmentShader) {
   unsigned int shaderProgram;
-  int success{ 0 };
+  int success{0};
   char infoLog[4096];
 
   shaderProgram = glCreateProgram();
@@ -83,10 +83,10 @@ unsigned int makeShaderProgram(uint32_t vertexShader, uint32_t fragmentShader) {
   glLinkProgram(shaderProgram);
 
   glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-  if (!success)
-  {
-      glGetProgramInfoLog(shaderProgram, 4096, NULL, infoLog);
-      std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+  if (!success) {
+    glGetProgramInfoLog(shaderProgram, 4096, NULL, infoLog);
+    std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
+              << infoLog << std::endl;
   }
 
   glDeleteShader(vertexShader);
@@ -160,6 +160,45 @@ void camera(uint32_t shaderId) {
   glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
 }
 
+void render(GameObject &pad) {
+  float zFar = (SCREEN_WIDTH / 2.0f) / tanf(fov / 2.0f) + 10.0f; // 100.0f
+  glm::mat4 projection = glm::perspective(
+      fov, (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, zFar);
+
+  glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT |
+          GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now!
+
+  // 2. use our shader program when we want to render an object
+  glUseProgram(pad.shaderId);
+  // glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
+
+  int modelprj = glGetUniformLocation(pad.shaderId, "projection");
+  glUniformMatrix4fv(modelprj, 1, GL_FALSE, glm::value_ptr(projection));
+
+  camera(pad.shaderId);
+
+  // and finally bind the texture
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, pad.textureId);
+  glBindVertexArray(pad.VAO);
+
+  glm::mat4 model = glm::mat4(1.0f);
+  model = glm::translate(model, glm::vec3(800.0f, 10.0f, 200.0f));
+  /*   model =
+         glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f,
+     0.0f, 1.0f));
+ */
+  model = glm::scale(model, glm::vec3(8.0, 8.0, 8.0));
+
+  int modelLoc = glGetUniformLocation(pad.shaderId, "model");
+  glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+  glDrawElements(GL_TRIANGLES, pad.mesh.indicies.size(), GL_UNSIGNED_INT, 0);
+  glBindVertexArray(0);
+  glUseProgram(0);
+}
+
 int main() {
 
   float deltaTime = 0.0f; // Time between current frame and last frame
@@ -177,7 +216,7 @@ int main() {
 
   glfwSetErrorCallback(error_callback);
 
-    glfwSetErrorCallback(error_callback);
+  glfwSetErrorCallback(error_callback);
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -202,13 +241,13 @@ int main() {
     exit(1);
   }
 
-   glEnable(GL_DEBUG_OUTPUT);
-   glDebugMessageCallback(
-        [](GLenum source, GLenum type, GLuint id, GLenum severity,
-           GLsizei length, const GLchar* message, const void* userParam) {
-            std::cout << "OpenGL Error/Warning: " << message << std::endl;
-        },
-        nullptr);
+  glEnable(GL_DEBUG_OUTPUT);
+  glDebugMessageCallback(
+      [](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+         const GLchar *message, const void *userParam) {
+        std::cout << "OpenGL Error/Warning: " << message << std::endl;
+      },
+      nullptr);
 
   // Enable depth test
   glEnable(GL_DEPTH_TEST);
@@ -225,14 +264,14 @@ int main() {
   // WaveFrontReader reader("../kub.obj");
 
   reader.readVertices(pad.mesh);
-  unsigned int VAO;
-  glGenVertexArrays(1, &VAO);
+
+  glGenVertexArrays(1, &pad.VAO);
 
   unsigned int VBO, EBO;
   glGenBuffers(1, &VBO);
   glGenBuffers(1, &EBO);
 
-  glBindVertexArray(VAO);
+  glBindVertexArray(pad.VAO);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
@@ -260,18 +299,14 @@ int main() {
 
   auto vertexShader = loadShaders(vertexShaderSource, GL_VERTEX_SHADER);
   auto fragmentShader = loadShaders(fragmentShaderSource, GL_FRAGMENT_SHADER);
+
   pad.shaderId = makeShaderProgram(vertexShader, fragmentShader);
-
-  float zFar = (SCREEN_WIDTH / 2.0f) / tanf(fov / 2.0f) + 10.0f; // 100.0f
-  glm::mat4 projection = glm::perspective(
-      fov, (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, zFar);
-
   pad.textureId = loadImage("../pad.png");
 
   glUseProgram(pad.shaderId);
   glActiveTexture(GL_TEXTURE0);
-  glUniform1i(glGetUniformLocation(pad.shaderId
-      , "texture_diffuse1"), 0); //zero is inxed zero but we only have one number
+  glUniform1i(glGetUniformLocation(pad.shaderId, "texture_diffuse1"),
+              0); // zero is inxed zero but we only have one number
 
   glUseProgram(0);
 
@@ -283,44 +318,14 @@ int main() {
 
     processInput(window);
 
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT |
-            GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now!
-
-    // 2. use our shader program when we want to render an object
-    glUseProgram(pad.shaderId);
-    // glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
-
-    int modelprj = glGetUniformLocation(pad.shaderId, "projection");
-    glUniformMatrix4fv(modelprj, 1, GL_FALSE, glm::value_ptr(projection));
-
-    camera(pad.shaderId);
-
-    // and finally bind the texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, pad.textureId);
-    glBindVertexArray(VAO);
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(800.0f, 400.0f, 200.0f));
-    model =
-        glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 1.0f));
-
-    model = glm::scale(model, glm::vec3(8.0, 8.0, 8.0));
-
-    int modelLoc = glGetUniformLocation(pad.shaderId, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-    glDrawElements(GL_TRIANGLES, pad.mesh.indicies.size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-    glUseProgram(0);
+    render(pad);
 
     glfwSwapBuffers(window);
     // Keep running
     glfwPollEvents();
   }
 
-  glDeleteVertexArrays(1, &VAO);
+  glDeleteVertexArrays(1, &pad.VAO);
   glDeleteBuffers(1, &VBO);
   glDeleteBuffers(1, &EBO);
 
