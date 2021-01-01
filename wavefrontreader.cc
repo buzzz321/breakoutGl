@@ -26,7 +26,7 @@ void WaveFrontReader::readVertices(Mesh &obj) {
         std::stringstream conv{line.substr(1)};
         float x, y, z;
         conv >> x >> y >> z;
-        std::cout << "v x " << x << " y " << y << " z " << z << std::endl;
+        // std::cout << "v x " << x << " y " << y << " z " << z << std::endl;
         vertices.push_back(glm::vec3(x, y, z));
         continue;
       }
@@ -35,7 +35,7 @@ void WaveFrontReader::readVertices(Mesh &obj) {
         std::stringstream conv{line.substr(2)};
         float x, y;
         conv >> x >> y;
-        std::cout << "vt x " << x << " y " << y << std::endl;
+        // std::cout << "vt x " << x << " y " << y << std::endl;
         textureCoords.push_back(glm::vec2(x, -y));
         continue;
       }
@@ -45,7 +45,7 @@ void WaveFrontReader::readVertices(Mesh &obj) {
         std::stringstream conv{line.substr(2)};
         float x, y, z;
         conv >> x >> y >> z;
-        std::cout << "vn x " << x << " y " << y << std::endl;
+        // std::cout << "vn x " << x << " y " << y << std::endl;
         normals.push_back(glm::vec3(x, y, z));
 
         continue;
@@ -55,14 +55,14 @@ void WaveFrontReader::readVertices(Mesh &obj) {
         // f 1/2/3 1/2/3 13/1/2
         // f 11/108/34 13/109/34 7/106/34
         std::istringstream splitter{line.substr(2)};
-        std::cout << line << std::endl;
+        // std::cout << line << std::endl;
         std::string face;
 
         Vertex vert;
         while (std::getline(splitter, face, ' ')) {
           uint64_t indexV{0}, indexVt{0}, indexVn{0};
 
-          std::cout << face << std::endl;
+          // std::cout << face << std::endl;
           auto start_pos = face.find('/'); // get index for vertex
           indexV = std::stoul(face.substr(0, start_pos), nullptr);
           vert.Coord = vertices[indexV - 1];
@@ -91,14 +91,14 @@ void WaveFrontReader::readVertices(Mesh &obj) {
         }
       }
     }
-    for (const auto &vert : obj.vertices) {
-      std::cout << "v x " << vert.Coord.x << " y " << vert.Coord.y << " z "
-                << vert.Coord.z << std::endl;
-    }
-    for (const auto &index : obj.indicies) {
-      std::cout << "index " << index << std::endl;
-    }
-
+    /*    for (const auto &vert : obj.vertices) {
+          std::cout << "v x " << vert.Coord.x << " y " << vert.Coord.y << " z "
+                    << vert.Coord.z << std::endl;
+        }
+        for (const auto &index : obj.indicies) {
+          std::cout << "index " << index << std::endl;
+        }
+    */
     obj.indicies.shrink_to_fit();
     obj.vertices.shrink_to_fit();
     myfile.close();

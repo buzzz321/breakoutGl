@@ -74,7 +74,7 @@ unsigned int loadShaders(const char *shaderSource, GLenum shaderType) {
 
 unsigned int makeShaderProgram(uint32_t vertexShader, uint32_t fragmentShader) {
   unsigned int shaderProgram;
-  int success{ 0 };
+  int success{0};
   char infoLog[4096];
 
   shaderProgram = glCreateProgram();
@@ -83,10 +83,10 @@ unsigned int makeShaderProgram(uint32_t vertexShader, uint32_t fragmentShader) {
   glLinkProgram(shaderProgram);
 
   glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-  if (!success)
-  {
-      glGetProgramInfoLog(shaderProgram, 4096, NULL, infoLog);
-      std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+  if (!success) {
+    glGetProgramInfoLog(shaderProgram, 4096, NULL, infoLog);
+    std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
+              << infoLog << std::endl;
   }
 
   glDeleteShader(vertexShader);
@@ -160,6 +160,95 @@ void camera(uint32_t shaderId) {
   glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
 }
 
+void renderObj(GameObject &obj) {
+  float zFar = (SCREEN_WIDTH / 2.0f) / tanf(fov / 2.0f) + 10.0f; // 100.0f
+  glm::mat4 projection = glm::perspective(
+      fov, (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, zFar);
+
+  // 2. use our shader program when we want to render an object
+  glUseProgram(obj.shaderId);
+  // glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
+
+  int modelprj = glGetUniformLocation(obj.shaderId, "projection");
+  glUniformMatrix4fv(modelprj, 1, GL_FALSE, glm::value_ptr(projection));
+
+  camera(obj.shaderId);
+
+  // and finally bind the texture
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, obj.textureId);
+  glBindVertexArray(obj.VAO);
+
+  glm::mat4 model = glm::mat4(1.0f);
+  model = glm::translate(model, obj.movement);
+  /*   model =
+         glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f,
+     0.0f, 1.0f));
+ */
+  model = glm::scale(model, obj.scale);
+
+  int modelLoc = glGetUniformLocation(obj.shaderId, "model");
+  glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+  glDrawElements(GL_TRIANGLES, obj.mesh.indicies.size(), GL_UNSIGNED_INT, 0);
+  glBindVertexArray(0);
+  glUseProgram(0);
+}
+
+void CreateGameObject(GameObject &obj, std::string assetName,
+                      std::string assetMaterialName) {
+  WaveFrontReader reader(assetName);
+  // WaveFrontReader reader("../plane.obj");
+  // WaveFrontReader reader("../kub.obj");
+
+  reader.readVertices(obj.mesh);
+
+  glGenVertexArrays(1, &obj.VAO);
+
+  glGenBuffers(1, &obj.VBO);
+  glGenBuffers(1, &obj.EBO);
+
+  glBindVertexArray(obj.VAO);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj.EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+               obj.mesh.indicies.size() * sizeof(uint32_t),
+               &obj.mesh.indicies[0], GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ARRAY_BUFFER, obj.VBO);
+  glBufferData(GL_ARRAY_BUFFER, obj.mesh.vertices.size() * sizeof(Vertex),
+               &obj.mesh.vertices[0], GL_STATIC_DRAW);
+
+  // vertex positions
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
+  // vertex normals
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                        (void *)offsetof(Vertex, Normal));
+  // vertex texture coords
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                        (void *)offsetof(Vertex, TextureCoords));
+
+  glEnableVertexAttribArray(0);
+  glBindVertexArray(0);
+
+  auto vertexShader = loadShaders(vertexShaderSource, GL_VERTEX_SHADER);
+  auto fragmentShader = loadShaders(fragmentShaderSource, GL_FRAGMENT_SHADER);
+
+  obj.shaderId = makeShaderProgram(vertexShader, fragmentShader);
+
+  if (assetMaterialName != "") {
+    obj.textureId = loadImage(assetMaterialName);
+
+    glUseProgram(obj.shaderId);
+    glActiveTexture(GL_TEXTURE0);
+    glUniform1i(glGetUniformLocation(obj.shaderId, "texture_diffuse1"), 0);
+  }
+  glUseProgram(0);
+}
+
 int main() {
 
   float deltaTime = 0.0f; // Time between current frame and last frame
@@ -177,7 +266,7 @@ int main() {
 
   glfwSetErrorCallback(error_callback);
 
-    glfwSetErrorCallback(error_callback);
+  glfwSetErrorCallback(error_callback);
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -202,13 +291,13 @@ int main() {
     exit(1);
   }
 
-   glEnable(GL_DEBUG_OUTPUT);
-   glDebugMessageCallback(
-        [](GLenum source, GLenum type, GLuint id, GLenum severity,
-           GLsizei length, const GLchar* message, const void* userParam) {
-            std::cout << "OpenGL Error/Warning: " << message << std::endl;
-        },
-        nullptr);
+  glEnable(GL_DEBUG_OUTPUT);
+  glDebugMessageCallback(
+      [](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+         const GLchar *message, const void *userParam) {
+        std::cout << "OpenGL Error/Warning: " << message << std::endl;
+      },
+      nullptr);
 
   // Enable depth test
   glEnable(GL_DEPTH_TEST);
@@ -219,61 +308,12 @@ int main() {
   (GL_CULL_FACE);
 
   GameObject pad;
+  pad.movement = glm::vec3(800.0f, 10.0f, 200.0f);
+  CreateGameObject(pad, "../pad.obj", "../pad.png");
 
-  WaveFrontReader reader("../pad.obj");
-  // WaveFrontReader reader("../plane.obj");
-  // WaveFrontReader reader("../kub.obj");
-
-  reader.readVertices(pad.mesh);
-  unsigned int VAO;
-  glGenVertexArrays(1, &VAO);
-
-  unsigned int VBO, EBO;
-  glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
-
-  glBindVertexArray(VAO);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-               pad.mesh.indicies.size() * sizeof(uint32_t),
-               &pad.mesh.indicies[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, pad.mesh.vertices.size() * sizeof(Vertex),
-               &pad.mesh.vertices[0], GL_STATIC_DRAW);
-
-  // vertex positions
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
-  // vertex normals
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, Normal));
-  // vertex texture coords
-  glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, TextureCoords));
-
-  glEnableVertexAttribArray(0);
-  glBindVertexArray(0);
-
-  auto vertexShader = loadShaders(vertexShaderSource, GL_VERTEX_SHADER);
-  auto fragmentShader = loadShaders(fragmentShaderSource, GL_FRAGMENT_SHADER);
-  pad.shaderId = makeShaderProgram(vertexShader, fragmentShader);
-
-  float zFar = (SCREEN_WIDTH / 2.0f) / tanf(fov / 2.0f) + 10.0f; // 100.0f
-  glm::mat4 projection = glm::perspective(
-      fov, (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, zFar);
-
-  pad.textureId = loadImage("../pad.png");
-
-  glUseProgram(pad.shaderId);
-  glActiveTexture(GL_TEXTURE0);
-  glUniform1i(glGetUniformLocation(pad.shaderId
-      , "texture_diffuse1"), 0); //zero is inxed zero but we only have one number
-
-  glUseProgram(0);
+  GameObject ball;
+  ball.movement = glm::vec3(800.0f, 200.0f, 200.0f);
+  CreateGameObject(ball, "../ball.obj", "../pad.png");
 
   //  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   while (!glfwWindowShouldClose(window)) {
@@ -287,42 +327,21 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT |
             GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now!
 
-    // 2. use our shader program when we want to render an object
-    glUseProgram(pad.shaderId);
-    // glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
-
-    int modelprj = glGetUniformLocation(pad.shaderId, "projection");
-    glUniformMatrix4fv(modelprj, 1, GL_FALSE, glm::value_ptr(projection));
-
-    camera(pad.shaderId);
-
-    // and finally bind the texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, pad.textureId);
-    glBindVertexArray(VAO);
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(800.0f, 400.0f, 200.0f));
-   /* model =
-        glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 1.0f));
-*/
-    model = glm::scale(model, glm::vec3(8.0, 8.0, 8.0));
-
-    int modelLoc = glGetUniformLocation(pad.shaderId, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-    glDrawElements(GL_TRIANGLES, pad.mesh.indicies.size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-    glUseProgram(0);
+    renderObj(pad);
+    renderObj(ball);
 
     glfwSwapBuffers(window);
     // Keep running
     glfwPollEvents();
   }
 
-  glDeleteVertexArrays(1, &VAO);
-  glDeleteBuffers(1, &VBO);
-  glDeleteBuffers(1, &EBO);
+  glDeleteVertexArrays(1, &pad.VAO);
+  glDeleteBuffers(1, &pad.VBO);
+  glDeleteBuffers(1, &pad.EBO);
+
+  glDeleteVertexArrays(1, &ball.VAO);
+  glDeleteBuffers(1, &ball.VBO);
+  glDeleteBuffers(1, &ball.EBO);
 
   glfwDestroyWindow(window);
   glfwTerminate();
