@@ -160,14 +160,10 @@ void camera(uint32_t shaderId) {
   glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
 }
 
-void render(GameObject &obj) {
+void renderObj(GameObject &obj) {
   float zFar = (SCREEN_WIDTH / 2.0f) / tanf(fov / 2.0f) + 10.0f; // 100.0f
   glm::mat4 projection = glm::perspective(
       fov, (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, zFar);
-
-  glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT |
-          GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now!
 
   // 2. use our shader program when we want to render an object
   glUseProgram(obj.shaderId);
@@ -313,8 +309,11 @@ int main() {
 
   GameObject pad;
   pad.movement = glm::vec3(800.0f, 10.0f, 200.0f);
-
   CreateGameObject(pad, "../pad.obj", "../pad.png");
+
+  GameObject ball;
+  ball.movement = glm::vec3(800.0f, 200.0f, 200.0f);
+  CreateGameObject(ball, "../ball.obj", "../pad.png");
 
   //  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   while (!glfwWindowShouldClose(window)) {
@@ -324,7 +323,12 @@ int main() {
 
     processInput(window);
 
-    render(pad);
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT |
+            GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now!
+
+    renderObj(pad);
+    renderObj(ball);
 
     glfwSwapBuffers(window);
     // Keep running
@@ -334,6 +338,10 @@ int main() {
   glDeleteVertexArrays(1, &pad.VAO);
   glDeleteBuffers(1, &pad.VBO);
   glDeleteBuffers(1, &pad.EBO);
+
+  glDeleteVertexArrays(1, &ball.VAO);
+  glDeleteBuffers(1, &ball.VBO);
+  glDeleteBuffers(1, &ball.EBO);
 
   glfwDestroyWindow(window);
   glfwTerminate();
