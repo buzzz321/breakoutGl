@@ -303,9 +303,9 @@ int main() {
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(800.0f, 400.0f, 200.0f));
-    model =
+   /* model =
         glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 1.0f));
-
+*/
     model = glm::scale(model, glm::vec3(8.0, 8.0, 8.0));
 
     int modelLoc = glGetUniformLocation(pad.shaderId, "model");
