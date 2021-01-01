@@ -128,8 +128,15 @@ void error_callback(int error, const char *description) {
 
 void key_callback(GLFWwindow *window, int key, int /*scancode*/, int action,
                   int /*mods*/) {
-  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    glfwSetWindowShouldClose(window, GLFW_TRUE);
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+    else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+
+    }
+    else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+
+    }
 }
 
 void framebuffer_size_callback(GLFWwindow * /*window*/, int width, int height) {
@@ -198,8 +205,6 @@ void renderObj(GameObject &obj) {
 void CreateGameObject(GameObject &obj, std::string assetName,
                       std::string assetMaterialName) {
   WaveFrontReader reader(assetName);
-  // WaveFrontReader reader("../plane.obj");
-  // WaveFrontReader reader("../kub.obj");
 
   reader.readVertices(obj.mesh);
 
@@ -266,8 +271,6 @@ int main() {
 
   glfwSetErrorCallback(error_callback);
 
-  glfwSetErrorCallback(error_callback);
-
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -322,6 +325,19 @@ int main() {
     lastFrame = currentFrame;
 
     processInput(window);
+
+    int rState = glfwGetKey(window, GLFW_KEY_RIGHT);
+    int lState = glfwGetKey(window, GLFW_KEY_LEFT);
+   
+    if (lState == GLFW_PRESS)
+    {
+        std::cout << "left" << std::endl;
+    }
+    if (rState == GLFW_PRESS)
+    {
+        std::cout << "right" << std::endl;
+    }
+
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT |
