@@ -18,6 +18,7 @@ void WaveFrontReader::readVertices(Mesh &obj) {
   std::vector<glm::vec2> textureCoords;
   std::vector<glm::vec3> normals;
   std::unordered_map<uint64_t, uint32_t> faces;
+  float xMax{-10000.0f}, xMin{10000.0f}, yMax{-10000.0f}, yMin{10000.0f};
 
   if (myfile.is_open()) {
     while (getline(myfile, line)) {
@@ -28,6 +29,12 @@ void WaveFrontReader::readVertices(Mesh &obj) {
         conv >> x >> y >> z;
         // std::cout << "v x " << x << " y " << y << " z " << z << std::endl;
         vertices.push_back(glm::vec3(x, y, z));
+        xMax = (xMax > x) ? xMax : x;
+        xMin = (xMin < x) ? xMin : x;
+
+        yMax = (yMax > x) ? yMax : x;
+        yMin = (yMin < x) ? yMin : x;
+
         continue;
       }
       vpos = line.find("vt ");
@@ -91,6 +98,8 @@ void WaveFrontReader::readVertices(Mesh &obj) {
         }
       }
     }
+    obj.height = yMax - yMin;
+    obj.width = xMax - xMin;
     /*    for (const auto &vert : obj.vertices) {
           std::cout << "v x " << vert.Coord.x << " y " << vert.Coord.y << " z "
                     << vert.Coord.z << std::endl;

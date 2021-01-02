@@ -14,4 +14,6 @@ struct Mesh {
   std::vector<uint32_t> indicies;
   std::vector<uint32_t> texture_indicies;
   std::vector<uint32_t> normal_indicies;
+  float width{0};
+  float height{0};
 };

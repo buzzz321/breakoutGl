@@ -313,7 +313,7 @@ int main() {
 
   GameObject ball;
   ball.movement = glm::vec3(800.0f, 200.0f, 200.0f);
-  CreateGameObject(ball, "../ball.obj", "../pad.png");
+  CreateGameObject(ball, "../ball.obj", "../ball.png");
 
   //  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glm::vec3 delta(0.0f, 0.0f, 0.0f);
@@ -336,7 +336,14 @@ int main() {
       delta.x = 0.0f;
     }
 
-    pad.movement += delta * deltaTime * 550.0f;
+    pad.movement += delta * deltaTime * 750.0f;
+
+    if (pad.movement.x < 0) {
+      pad.movement.x = 0.0f;
+    }
+    if (pad.movement.x > SCREEN_WIDTH - pad.mesh.width) {
+      pad.movement.x = SCREEN_WIDTH - pad.mesh.width;
+    }
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT |
             GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now!
