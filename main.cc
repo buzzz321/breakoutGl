@@ -150,11 +150,11 @@ void camera(uint32_t shaderId) {
 
   float zFar = (SCREEN_WIDTH / 2.0f) / tanf(fov / 2.0f); // was 90.0f
   glm::vec3 cameraPos =
-      glm::vec3(SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f, zFar);
+      glm::vec3(0 / 2.0f, 0 / 2.0f, zFar);
   glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-  //  std::cout << " x= " << cameraPos.x << " y = " << cameraPos.y
+  //std::cout << " x= " << cameraPos.x << " y = " << cameraPos.y
   //            << " z = " << cameraPos.z << " zFar = " << zFar << " tan µ "
-  //            << tanf64(fov / 2.0f) << " fov " << fov << std::endl;
+  //            << tan(fov / 2.0f) << " fov " << fov << std::endl;
   // glm::vec3 cameraFront = glm::vec3(32.0f, 32.0f, -1.0f);
 
   glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -165,10 +165,11 @@ void camera(uint32_t shaderId) {
 }
 
 void renderObj(GameObject &obj) {
-  float zFar = (SCREEN_WIDTH / 2.0f) / tanf(fov / 2.0f) + 10.0f; // 100.0f
-  glm::mat4 projection = glm::perspective(
-      fov, (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, zFar);
+  float zFar = (SCREEN_WIDTH / 2.0f) / tanf(fov / 2.0f); // 100.0f
+ // glm::mat4 projection = glm::perspective(
+ //     fov, (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, zFar);
 
+  glm::mat4 projection = glm::ortho(0.0f, (float)SCREEN_WIDTH, 0.0f, (float)SCREEN_HEIGHT, 0.1f, zFar);
   // 2. use our shader program when we want to render an object
   glUseProgram(obj.shaderId);
   // glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
@@ -305,10 +306,10 @@ int main() {
   glDepthFunc(GL_LESS);
 
   // Cull triangles which normal is not towards the camera
-  (GL_CULL_FACE);
+  glEnable(GL_CULL_FACE);
 
   GameObject pad;
-  pad.movement = glm::vec3(800.0f, 10.0f, 200.0f);
+  pad.movement = glm::vec3(800.0f, 100.0f, 200.0f);
   CreateGameObject(pad, "../pad.obj", "../pad.png");
 
   GameObject ball;
@@ -316,7 +317,8 @@ int main() {
   CreateGameObject(ball, "../ball.obj", "../ball.png");
 
   //  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  glm::vec3 delta(0.0f, 0.0f, 0.0f);
+  glm::vec3 padMov(0.0f, 0.0f, 0.0f);
+  glm::vec3 ballMov(10.0f, 10.0f, 0.0f);
 
   while (!glfwWindowShouldClose(window)) {
     float currentFrame = (float)glfwGetTime();
@@ -329,21 +331,37 @@ int main() {
     int lState = glfwGetKey(window, GLFW_KEY_LEFT);
 
     if (lState == GLFW_PRESS) {
-      delta.x = -1.0f;
+      padMov.x = -1.0f;
     } else if (rState == GLFW_PRESS) {
-      delta.x = 1.0f;
+      padMov.x = 1.0f;
     } else {
-      delta.x = 0.0f;
+      padMov.x = 0.0f;
     }
 
-    pad.movement += delta * deltaTime * 750.0f;
+    pad.movement += padMov * deltaTime * 750.0f;
+    ball.movement += ballMov * deltaTime * 40.0f;
 
-    if (pad.movement.x < 0) {
-      pad.movement.x = 0.0f;
+    if (pad.movement.x < 0 + pad.mesh.width) {
+      pad.movement.x = pad.mesh.width ;
     }
     if (pad.movement.x > SCREEN_WIDTH - pad.mesh.width) {
-      pad.movement.x = SCREEN_WIDTH - pad.mesh.width;
+        pad.movement.x = SCREEN_WIDTH - pad.mesh.width;
     }
+
+    if (ball.movement.x > SCREEN_WIDTH - ball.mesh.width * deltaTime * 10.0f) {
+        ballMov.x = -ballMov.x;
+    }
+    if (ball.movement.x < ball.mesh.width) {
+        ballMov.x = -ballMov.x;
+       
+    }
+    if (ball.movement.y > SCREEN_HEIGHT - ball.mesh.height) {
+        ballMov.y = -ballMov.y;
+    }
+    if (ball.movement.y < 0) {
+        ballMov.y = -ballMov.y;
+    }
+
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT |
             GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now!
