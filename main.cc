@@ -114,7 +114,7 @@ unsigned int loadImage(std::string filename) {
                  GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
   } else {
-    std::cout << "cant find texture name " << filename << std::endl;
+    std::cout << "Cant find texture name " << filename << std::endl;
   }
   stbi_image_free(data);
 
@@ -128,15 +128,12 @@ void error_callback(int error, const char *description) {
 
 void key_callback(GLFWwindow *window, int key, int /*scancode*/, int action,
                   int /*mods*/) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-    else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+    glfwSetWindowShouldClose(window, GLFW_TRUE);
+  } else if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
 
-    }
-    else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
-
-    }
+  } else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+  }
 }
 
 void framebuffer_size_callback(GLFWwindow * /*window*/, int width, int height) {
@@ -319,6 +316,8 @@ int main() {
   CreateGameObject(ball, "../ball.obj", "../pad.png");
 
   //  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  glm::vec3 delta(0.0f, 0.0f, 0.0f);
+
   while (!glfwWindowShouldClose(window)) {
     float currentFrame = (float)glfwGetTime();
     deltaTime = currentFrame - lastFrame;
@@ -328,17 +327,16 @@ int main() {
 
     int rState = glfwGetKey(window, GLFW_KEY_RIGHT);
     int lState = glfwGetKey(window, GLFW_KEY_LEFT);
-   
-    if (lState == GLFW_PRESS)
-    {
-        std::cout << "left" << std::endl;
-    }
-    if (rState == GLFW_PRESS)
-    {
-        std::cout << "right" << std::endl;
+
+    if (lState == GLFW_PRESS) {
+      delta.x = -1.0f;
+    } else if (rState == GLFW_PRESS) {
+      delta.x = 1.0f;
+    } else {
+      delta.x = 0.0f;
     }
 
-
+    pad.movement += delta * deltaTime * 550.0f;
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT |
             GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now!
