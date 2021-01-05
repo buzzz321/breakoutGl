@@ -149,10 +149,9 @@ void camera(uint32_t shaderId) {
   glm::mat4 view = glm::mat4(1.0f);
 
   float zFar = (SCREEN_WIDTH / 2.0f) / tanf(fov / 2.0f); // was 90.0f
-  glm::vec3 cameraPos =
-      glm::vec3(0 / 2.0f, 0 / 2.0f, zFar);
+  glm::vec3 cameraPos = glm::vec3(0 / 2.0f, 0 / 2.0f, zFar);
   glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-  //std::cout << " x= " << cameraPos.x << " y = " << cameraPos.y
+  // std::cout << " x= " << cameraPos.x << " y = " << cameraPos.y
   //            << " z = " << cameraPos.z << " zFar = " << zFar << " tan µ "
   //            << tan(fov / 2.0f) << " fov " << fov << std::endl;
   // glm::vec3 cameraFront = glm::vec3(32.0f, 32.0f, -1.0f);
@@ -164,38 +163,36 @@ void camera(uint32_t shaderId) {
   glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
 }
 
-void renderObj(GameObject &obj) {
+void renderObjs(GameObject &objs) {
   float zFar = (SCREEN_WIDTH / 2.0f) / tanf(fov / 2.0f); // 100.0f
- // glm::mat4 projection = glm::perspective(
- //     fov, (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, zFar);
 
-  glm::mat4 projection = glm::ortho(0.0f, (float)SCREEN_WIDTH, 0.0f, (float)SCREEN_HEIGHT, 0.1f, zFar);
+  glm::mat4 projection = glm::ortho(0.0f, (float)SCREEN_WIDTH, 0.0f,
+                                    (float)SCREEN_HEIGHT, 0.1f, zFar);
   // 2. use our shader program when we want to render an object
-  glUseProgram(obj.shaderId);
-  // glUniform1i(glGetUniformLocation(shaderProgram, "ourTexture"), 0);
+  glUseProgram(objs.shaderId);
 
-  int modelprj = glGetUniformLocation(obj.shaderId, "projection");
+  int modelprj = glGetUniformLocation(objs.shaderId, "projection");
   glUniformMatrix4fv(modelprj, 1, GL_FALSE, glm::value_ptr(projection));
 
-  camera(obj.shaderId);
+  camera(objs.shaderId);
 
   // and finally bind the texture
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, obj.textureId);
-  glBindVertexArray(obj.VAO);
+  glBindTexture(GL_TEXTURE_2D, objs.textureId);
+  glBindVertexArray(objs.VAO);
 
   glm::mat4 model = glm::mat4(1.0f);
-  model = glm::translate(model, obj.movement);
+  model = glm::translate(model, objs.movement);
   /*   model =
          glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f,
      0.0f, 1.0f));
  */
-  model = glm::scale(model, obj.scale);
+  model = glm::scale(model, objs.scale);
 
-  int modelLoc = glGetUniformLocation(obj.shaderId, "model");
+  int modelLoc = glGetUniformLocation(objs.shaderId, "model");
   glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-  glDrawElements(GL_TRIANGLES, obj.mesh.indicies.size(), GL_UNSIGNED_INT, 0);
+  glDrawElements(GL_TRIANGLES, objs.mesh.indicies.size(), GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
   glUseProgram(0);
 }
@@ -250,6 +247,30 @@ void CreateGameObject(GameObject &obj, std::string assetName,
     glUniform1i(glGetUniformLocation(obj.shaderId, "texture_diffuse1"), 0);
   }
   glUseProgram(0);
+}
+
+std::vector<GameObject> generateBlocks(std::string objName,
+                                       std::string materialName) {
+  GameObject block;
+  std::vector<GameObject> retVal;
+
+  block.movement = glm::vec3(0.0f, 1050.0f, 200.0f);
+  CreateGameObject(block, objName, materialName);
+
+  auto blockWidth = block.mesh.width * block.scale.x;
+  auto blockHeight = block.mesh.height * block.scale.y;
+  std::cout << " block width = " << blockWidth << std::endl;
+  for (int n = 0; n < 10; n++) {
+    for (int i = 0; i < (SCREEN_WIDTH / (blockWidth + 4) - 1); i++) {
+      block.movement.x = i * (blockWidth + 4) + blockWidth / 1.5f;
+      block.movement.y = 1050 - (n * (blockHeight + 4) + blockHeight / 1.5f);
+
+      std::cout << "xPos = " << block.movement.x << std::endl;
+      retVal.emplace_back(block);
+    }
+  }
+
+  return retVal;
 }
 
 int main() {
@@ -316,6 +337,8 @@ int main() {
   ball.movement = glm::vec3(800.0f, 200.0f, 200.0f);
   CreateGameObject(ball, "../ball.obj", "../ball.png");
 
+  auto blocks = generateBlocks("../block.obj", "../ball.png");
+
   //  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glm::vec3 padMov(0.0f, 0.0f, 0.0f);
   glm::vec3 ballMov(10.0f, 10.0f, 0.0f);
@@ -342,32 +365,35 @@ int main() {
     ball.movement += ballMov * deltaTime * 40.0f;
 
     if (pad.movement.x < 0 + pad.mesh.width) {
-      pad.movement.x = pad.mesh.width ;
+      pad.movement.x = pad.mesh.width;
     }
     if (pad.movement.x > SCREEN_WIDTH - pad.mesh.width) {
-        pad.movement.x = SCREEN_WIDTH - pad.mesh.width;
+      pad.movement.x = SCREEN_WIDTH - pad.mesh.width;
     }
 
     if (ball.movement.x > SCREEN_WIDTH - ball.mesh.width * deltaTime * 10.0f) {
-        ballMov.x = -ballMov.x;
+      ballMov.x = -ballMov.x;
     }
     if (ball.movement.x < ball.mesh.width) {
-        ballMov.x = -ballMov.x;
-       
+      ballMov.x = -ballMov.x;
     }
     if (ball.movement.y > SCREEN_HEIGHT - ball.mesh.height) {
-        ballMov.y = -ballMov.y;
+      ballMov.y = -ballMov.y;
     }
     if (ball.movement.y < 0) {
-        ballMov.y = -ballMov.y;
+      ballMov.y = -ballMov.y;
     }
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT |
             GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now!
 
-    renderObj(pad);
-    renderObj(ball);
+    renderObjs(pad);
+    renderObjs(ball);
+
+    for (auto &block : blocks) {
+      renderObjs(block);
+    }
 
     glfwSwapBuffers(window);
     // Keep running
