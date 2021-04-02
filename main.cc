@@ -265,12 +265,24 @@ std::vector<GameObject> generateBlocks(std::string objName,
       block.movement.x = i * (blockWidth + 4) + blockWidth / 1.5f;
       block.movement.y = 1050 - (n * (blockHeight + 4) + blockHeight / 1.5f);
 
-      std::cout << "xPos = " << block.movement.x << std::endl;
+      //std::cout << "xPos = " << block.movement.x << std::endl;
       retVal.emplace_back(block);
     }
   }
 
   return retVal;
+}
+
+void collision(glm::vec3 currPos, glm::vec3 newPos) {
+    auto va = newPos - currPos;
+    auto va_len = glm::length(va);
+    /*
+      x = start[0] + t/va_len*va[0]
+        y = start[1] + t/va_len*va[1]
+        z = start[2] + t/va_len*va[2]
+        */
+
+    //std::cout << " va.x = " << va.x << " va.y = " << va.y << " va.z = " << va.z << " vaLen = " << va_len << std::endl;
 }
 
 int main() {
@@ -360,6 +372,8 @@ int main() {
     } else {
       padMov.x = 0.0f;
     }
+
+    collision(ball.movement, ball.movement+ballMov * deltaTime * 40.0f);
 
     pad.movement += padMov * deltaTime * 750.0f;
     ball.movement += ballMov * deltaTime * 40.0f;
