@@ -265,7 +265,9 @@ std::vector<GameObject> generateBlocks(std::string objName,
       block.movement.x = i * (blockWidth + 4) + blockWidth / 1.5f;
       block.movement.y = 1050 - (n * (blockHeight + 4) + blockHeight / 1.5f);
 
-      //std::cout << "xPos = " << block.movement.x << std::endl;
+      // std::cout << "[ " << block.movement.x << ", " << block.movement.y << ",
+      // "
+      //          << block.movement.z << " ]," << std::endl;
       retVal.emplace_back(block);
     }
   }
@@ -353,7 +355,7 @@ int main() {
 
   //  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glm::vec3 padMov(0.0f, 0.0f, 0.0f);
-  glm::vec3 ballMov(10.0f, 10.0f, 0.0f);
+  glm::vec3 ballMov(1.0f, 1.0f, 0.0f);
 
   while (!glfwWindowShouldClose(window)) {
     float currentFrame = (float)glfwGetTime();
@@ -376,7 +378,7 @@ int main() {
     collision(ball.movement, ball.movement+ballMov * deltaTime * 40.0f);
 
     pad.movement += padMov * deltaTime * 750.0f;
-    ball.movement += ballMov * deltaTime * 40.0f;
+    ball.movement += ballMov * deltaTime * 400.0f;
 
     if (pad.movement.x < 0 + pad.mesh.width) {
       pad.movement.x = pad.mesh.width;
